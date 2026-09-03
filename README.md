@@ -118,8 +118,8 @@ The project will gradually move from a simple local LLM interface to a more adva
 
 ```text
 PHASE 1   → COMPLETED
-PHASE 2   → COMPLETED (Current implemented scope)
-PHASE 3   → NOT STARTED
+PHASE 2   → COMPLETED
+PHASE 3   → COMPLETED (File System + Read-Only Coding Agent)
 PHASE 4   → NOT STARTED
 PHASE 5   → NOT STARTED
 PHASE 6   → NOT STARTED
@@ -141,7 +141,9 @@ PHASE 1 → COMPLETED
         ↓
 PHASE 2 → COMPLETED
         ↓
-PHASE 3 → NEXT: CODING AGENT
+PHASE 3 → COMPLETED: FILE SYSTEM + READ-ONLY CODING AGENT
+    ↓
+PHASE 4 → NEXT: TERMINAL EXECUTION
 ```
 
 ---
@@ -310,6 +312,10 @@ The API can currently handle:
 - Workspace management
     
 - File management
+
+- Coding Agent requests
+
+- Read-only project context analysis
     
 
 ---
@@ -1304,16 +1310,16 @@ Possible future improvements:
 ## Status
 
 ```text
-NEXT PHASE
+COMPLETED
 ```
 
-## Main Goal
+Phase 3 delivers the File System + Read-Only Coding Agent foundation.
 
-Create an AI agent capable of understanding a software request and generating or modifying project code.
+The Coding Agent can inspect a project and use the local LLM to provide coding guidance without modifying files or executing commands.
 
 ---
 
-## Planned Architecture
+## Implemented Architecture
 
 ```text
 User Request
@@ -1321,39 +1327,40 @@ User Request
       ▼
 Coding Agent
       │
-      ├── Collect Project Context
+    ├── Collect project metadata and file context
       │
-      ├── Analyze Existing Files
+    ├── Analyze existing readable files
       │
-      ├── Build Prompt
+    ├── Build a coding prompt
       │
-      ├── Send Request to Local LLM
+    ├── Send the request to the local LLM
       │
-      ├── Parse Response
+    ├── Return the generated text response
       │
       └── Return Structured Result
 ```
 
 ---
 
-## Planned Features
+## Completed Features
 
-### STEP 3.1 — Agent Architecture
+### Agent Architecture
 
-Create:
+Implemented modules:
 
 ```text
 app/
 └── agents/
-    ├── __init__.py
+    ├── agent.py
+    ├── project_context.py
     └── coding_agent.py
 ```
 
 ---
 
-### STEP 3.2 — Project Context
+### Project Context Collection
 
-The Coding Agent should collect:
+The agent collects:
 
 - Project ID
     
@@ -1372,9 +1379,9 @@ The Coding Agent should collect:
 
 ---
 
-### STEP 3.3 — Prompt Construction
+### Prompt Construction
 
-The system will construct coding prompts using:
+The system constructs coding prompts using:
 
 ```text
 System Instructions
@@ -1388,11 +1395,11 @@ User Request
 
 ---
 
-### STEP 3.4 — Structured Output
+### Read-Only LLM Analysis
 
-The AI should eventually return structured output.
+The agent sends project context and the user's task to the local LLM and returns a non-empty text response. It explicitly does not claim to modify files.
 
-Example:
+Example request:
 
 ```json
 {
@@ -1408,24 +1415,15 @@ Example:
 
 ---
 
-### STEP 3.5 — Multi-File Generation
+### File System Safety
 
-The agent should support generating:
-
-```text
-src/main.py
-src/calculator.py
-tests/test_calculator.py
-README.md
-```
-
-from a single user request.
+The agent reads project files for context only. File creation, updates, deletion, and path traversal protections remain controlled by the existing File Management API.
 
 ---
 
-### STEP 3.6 — Agent API
+### Agent API
 
-A future endpoint may be:
+The implemented endpoint is:
 
 ```text
 POST /projects/{project_id}/agent
@@ -1441,19 +1439,20 @@ Example request:
 
 ---
 
-### STEP 3.7 — Automated Agent Tests
+The endpoint validates the project, confirms that the local model is loaded, and returns the project ID, task, and generated response.
 
-The test suite will be extended to verify:
+---
 
-- Project context collection
-    
-- Prompt generation
-    
-- LLM interaction
-    
-- Structured response parsing
-    
-- Generated file handling
+### Automated Agent Tests
+
+The API test suite verifies:
+
+- Successful Coding Agent responses
+- Request validation
+- Missing project handling
+- Integration with project and file workflows
+
+Phase 3 does not yet include structured multi-file generation, file modification, terminal execution, or automated testing and debugging.
     
 
 ---
@@ -2489,6 +2488,12 @@ ALL API, WORKSPACE, AND FILE TESTS PASSED!
 
 ✓ Path traversal protection
 
+✓ Read-only Coding Agent
+
+✓ Project context collection
+
+✓ Coding Agent API
+
 ✓ Automated API tests
 
 ✓ 30/30 automated tests passing
@@ -2500,42 +2505,23 @@ ALL API, WORKSPACE, AND FILE TESTS PASSED!
 
 The immediate next task is:
 
-# PHASE 3 — Coding Agent
+# PHASE 4 — Terminal Execution
 
 The first objective is:
 
 ```text
-STEP 3.1
+Add controlled terminal execution within project workspaces.
 
-Create the Coding Agent architecture.
+Commands must use workspace restrictions, timeouts, process limits, and explicit user controls.
 ```
 
-Planned initial files:
+Planned areas include:
 
 ```text
-backend/
-└── app/
-    └── agents/
-        ├── __init__.py
-        └── coding_agent.py
-```
-
-After that, the project will implement:
-
-```text
-STEP 3.2 → Project Context Collection
-
-STEP 3.3 → Coding Prompt Construction
-
-STEP 3.4 → LLM Code Generation
-
-STEP 3.5 → Structured AI Output
-
-STEP 3.6 → Multi-File Generation
-
-STEP 3.7 → Agent API
-
-STEP 3.8 → Agent Testing
+Terminal service
+Command execution policy
+Output and error capture
+Process management
 ```
 
 ---
@@ -2656,7 +2642,7 @@ The system is intended to evolve step by step into a powerful local AI-assisted 
 ║   PHASE 1  ██████████ COMPLETED          ║
 ║   PHASE 2  ██████████ COMPLETED          ║
 ║                                          ║
-║   PHASE 3  ░░░░░░░░░░ NEXT               ║
+║   PHASE 3  ██████████ COMPLETED          ║
 ║   PHASE 4  ░░░░░░░░░░                    ║
 ║   PHASE 5  ░░░░░░░░░░                    ║
 ║   PHASE 6  ░░░░░░░░░░                    ║
@@ -2668,7 +2654,7 @@ The system is intended to evolve step by step into a powerful local AI-assisted 
 ║   PHASE 12 ░░░░░░░░░░                    ║
 ║   PHASE 13 ░░░░░░░░░░                    ║
 ║                                          ║
-║        NEXT: CODING AGENT                 ║
+║        NEXT: TERMINAL EXECUTION          ║
 ║                                          ║
 ╚══════════════════════════════════════════╝
 ```
@@ -2702,7 +2688,7 @@ Automated Testing
 Next development milestone:
 
 ```text
-PHASE 3 — CODING AGENT
+PHASE 4 — TERMINAL EXECUTION
 ```
 
-This README reflects the **current state of the project based on the work completed so far**. The next implementation step is **Phase 3, Step 3.1: creating the `agents` architecture and the initial `coding_agent.py` foundation**.
+This README reflects the **current state of the project based on the work completed so far**. Phase 3, **File System + Read-Only Coding Agent**, is complete. The next implementation milestone is Phase 4, **Terminal Execution**.

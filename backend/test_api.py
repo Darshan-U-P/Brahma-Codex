@@ -72,11 +72,13 @@ def test_llm_info():
             timeout=10,
         )
 
+        data = response.json()
+
         success = (
             response.status_code == 200
-            and "loaded" in response.json()
-            and "model_path" in response.json()
-            and "model_exists" in response.json()
+            and "loaded" in data
+            and "model_path" in data
+            and "model_exists" in data
         )
 
         print_result(name, success, response)
@@ -131,10 +133,12 @@ def test_load_model():
             timeout=300,
         )
 
+        data = response.json()
+
         success = (
             response.status_code == 200
-            and response.json().get("success") is True
-            and response.json().get("loaded") is True
+            and data.get("success") is True
+            and data.get("loaded") is True
         )
 
         print_result(name, success, response)
@@ -157,10 +161,12 @@ def test_unload_model():
             timeout=60,
         )
 
+        data = response.json()
+
         success = (
             response.status_code == 200
-            and response.json().get("success") is True
-            and response.json().get("loaded") is False
+            and data.get("success") is True
+            and data.get("loaded") is False
         )
 
         print_result(name, success, response)
@@ -182,7 +188,10 @@ def test_chat():
     name = "POST /chat"
 
     payload = {
-        "message": "Reply with exactly: Local Codex is working",
+        "message": (
+            "Reply with exactly: "
+            "Local Codex is working"
+        ),
         "temperature": 0.1,
         "max_tokens": 50,
     }
@@ -201,8 +210,13 @@ def test_chat():
         success = (
             response.status_code == 200
             and "response" in data
-            and isinstance(data["response"], str)
-            and len(data["response"]) > 0
+            and isinstance(
+                data["response"],
+                str,
+            )
+            and len(
+                data["response"]
+            ) > 0
         )
 
         print_result(name, success, response)
@@ -220,7 +234,9 @@ def test_chat_stream():
     name = "POST /chat/stream"
 
     payload = {
-        "message": "Say hello in one short sentence.",
+        "message": (
+            "Say hello in one short sentence."
+        ),
         "temperature": 0.1,
         "max_tokens": 50,
     }
@@ -236,7 +252,11 @@ def test_chat_stream():
         )
 
         if response.status_code != 200:
-            print_result(name, False, response)
+            print_result(
+                name,
+                False,
+                response,
+            )
             return False
 
         received_tokens = []
@@ -259,9 +279,13 @@ def test_chat_stream():
                     token_data = json.loads(data)
 
                     if "token" in token_data:
-                        token = token_data["token"]
+                        token = (
+                            token_data["token"]
+                        )
 
-                        received_tokens.append(token)
+                        received_tokens.append(
+                            token
+                        )
 
                         print(
                             token,
@@ -280,13 +304,21 @@ def test_chat_stream():
         )
 
         print("\n" + "=" * 60)
+
         print(
-            f"[{'PASS' if success else 'FAIL'}] {name}"
+            f"[{'PASS' if success else 'FAIL'}] "
+            f"{name}"
         )
+
         print(
-            f"Received tokens: {len(received_tokens)}"
+            f"Received tokens: "
+            f"{len(received_tokens)}"
         )
-        print(f"Received DONE: {received_done}")
+
+        print(
+            f"Received DONE: "
+            f"{received_done}"
+        )
 
         return success
 
@@ -313,7 +345,9 @@ def test_chat_validation():
             timeout=10,
         )
 
-        success = response.status_code == 422
+        success = (
+            response.status_code == 422
+        )
 
         print_result(name, success, response)
 
@@ -339,7 +373,7 @@ def test_create_project():
             "Project created automatically "
             "by the Local Codex API test."
         ),
-        "project_type": "desktop",
+        "project_type": "python",
     }
 
     try:
@@ -354,8 +388,10 @@ def test_create_project():
         success = (
             response.status_code == 201
             and "id" in data
-            and data.get("name") == payload["name"]
-            and data.get("workspace_path") is not None
+            and data.get("name")
+            == payload["name"]
+            and data.get("workspace_path")
+            is not None
         )
 
         print_result(name, success, response)
@@ -383,10 +419,20 @@ def test_workspace_exists(workspace_path):
         path = Path(workspace_path)
 
         exists = path.exists()
+
         is_directory = path.is_dir()
-        src_exists = (path / "src").exists()
-        tests_exists = (path / "tests").exists()
-        readme_exists = (path / "README.md").exists()
+
+        src_exists = (
+            path / "src"
+        ).exists()
+
+        tests_exists = (
+            path / "tests"
+        ).exists()
+
+        readme_exists = (
+            path / "README.md"
+        ).exists()
 
         success = (
             exists
@@ -430,6 +476,7 @@ def test_readme_content(workspace_path):
         )
 
         if not readme_path.exists():
+
             print_result(
                 name,
                 False,
@@ -439,6 +486,7 @@ def test_readme_content(workspace_path):
                     )
                 },
             )
+
             return False
 
         content = readme_path.read_text(
@@ -447,7 +495,8 @@ def test_readme_content(workspace_path):
 
         success = (
             len(content.strip()) > 0
-            and "Automated Test Project" in content
+            and "Automated Test Project"
+            in content
         )
 
         print_result(
@@ -479,7 +528,10 @@ def test_list_projects():
 
         success = (
             response.status_code == 200
-            and isinstance(response.json(), list)
+            and isinstance(
+                response.json(),
+                list,
+            )
         )
 
         print_result(name, success, response)
@@ -494,7 +546,9 @@ def test_list_projects():
 
 
 def test_get_project(project_id):
-    name = f"GET /projects/{project_id}"
+    name = (
+        f"GET /projects/{project_id}"
+    )
 
     try:
         response = requests.get(
@@ -506,8 +560,10 @@ def test_get_project(project_id):
 
         success = (
             response.status_code == 200
-            and data.get("id") == project_id
-            and data.get("workspace_path") is not None
+            and data.get("id")
+            == project_id
+            and data.get("workspace_path")
+            is not None
         )
 
         print_result(name, success, response)
@@ -522,10 +578,14 @@ def test_get_project(project_id):
 
 
 def test_update_project(project_id):
-    name = f"PUT /projects/{project_id}"
+    name = (
+        f"PUT /projects/{project_id}"
+    )
 
     payload = {
-        "name": "Updated Automated Test Project",
+        "name": (
+            "Updated Automated Test Project"
+        ),
         "description": (
             "This project was updated "
             "by the automated API test."
@@ -545,8 +605,10 @@ def test_update_project(project_id):
 
         success = (
             response.status_code == 200
-            and data.get("id") == project_id
-            and data.get("name") == payload["name"]
+            and data.get("id")
+            == project_id
+            and data.get("name")
+            == payload["name"]
         )
 
         print_result(name, success, response)
@@ -561,7 +623,9 @@ def test_update_project(project_id):
 
 
 def test_workspace_still_exists(workspace_path):
-    name = "Workspace Exists After Project Update"
+    name = (
+        "Workspace Exists After Project Update"
+    )
 
     try:
         path = Path(workspace_path)
@@ -590,7 +654,10 @@ def test_workspace_still_exists(workspace_path):
 
 
 def test_project_not_found():
-    name = "GET /projects/999999 - Not Found Test"
+    name = (
+        "GET /projects/999999 "
+        "- Not Found Test"
+    )
 
     try:
         response = requests.get(
@@ -598,7 +665,9 @@ def test_project_not_found():
             timeout=10,
         )
 
-        success = response.status_code == 404
+        success = (
+            response.status_code == 404
+        )
 
         print_result(name, success, response)
 
@@ -616,13 +685,18 @@ def test_project_not_found():
 # ============================================================
 
 def test_create_file(project_id):
-    name = f"POST /projects/{project_id}/files"
+    name = (
+        f"POST /projects/{project_id}/files"
+    )
 
     payload = {
         "path": "src/main.py",
         "content": (
+            "def add(a, b):\n"
+            "    return a + b\n\n\n"
             "def main():\n"
-            "    print('Hello from Local Codex')\n\n"
+            "    result = add(2, 3)\n"
+            "    print(f'Result: {result}')\n\n\n"
             "if __name__ == '__main__':\n"
             "    main()\n"
         ),
@@ -631,7 +705,8 @@ def test_create_file(project_id):
 
     try:
         response = requests.post(
-            f"{BASE_URL}/projects/{project_id}/files",
+            f"{BASE_URL}/projects/"
+            f"{project_id}/files",
             json=payload,
             timeout=10,
         )
@@ -641,7 +716,8 @@ def test_create_file(project_id):
         success = (
             response.status_code == 201
             and data.get("success") is True
-            and data.get("path") == payload["path"]
+            and data.get("path")
+            == payload["path"]
         )
 
         print_result(name, success, response)
@@ -656,11 +732,14 @@ def test_create_file(project_id):
 
 
 def test_list_files(project_id):
-    name = f"GET /projects/{project_id}/files"
+    name = (
+        f"GET /projects/{project_id}/files"
+    )
 
     try:
         response = requests.get(
-            f"{BASE_URL}/projects/{project_id}/files",
+            f"{BASE_URL}/projects/"
+            f"{project_id}/files",
             timeout=10,
         )
 
@@ -670,7 +749,8 @@ def test_list_files(project_id):
             response.status_code == 200
             and isinstance(data, list)
             and any(
-                item.get("path") == "src/main.py"
+                item.get("path")
+                == "src/main.py"
                 for item in data
             )
         )
@@ -688,7 +768,8 @@ def test_list_files(project_id):
 
 def test_read_file(project_id):
     name = (
-        f"GET /projects/{project_id}/files/content"
+        f"GET /projects/{project_id}"
+        "/files/content"
     )
 
     params = {
@@ -697,7 +778,8 @@ def test_read_file(project_id):
 
     try:
         response = requests.get(
-            f"{BASE_URL}/projects/{project_id}/files/content",
+            f"{BASE_URL}/projects/"
+            f"{project_id}/files/content",
             params=params,
             timeout=10,
         )
@@ -706,8 +788,9 @@ def test_read_file(project_id):
 
         success = (
             response.status_code == 200
-            and data.get("path") == "src/main.py"
-            and "Hello from Local Codex"
+            and data.get("path")
+            == "src/main.py"
+            and "def add(a, b)"
             in data.get("content", "")
         )
 
@@ -724,7 +807,8 @@ def test_read_file(project_id):
 
 def test_update_file(project_id):
     name = (
-        f"PUT /projects/{project_id}/files/content"
+        f"PUT /projects/{project_id}"
+        "/files/content"
     )
 
     params = {
@@ -733,8 +817,13 @@ def test_update_file(project_id):
 
     payload = {
         "content": (
+            "def add(a, b):\n"
+            "    return a + b\n\n\n"
+            "def subtract(a, b):\n"
+            "    return a - b\n\n\n"
             "def main():\n"
-            "    print('File updated successfully')\n\n"
+            "    print(add(5, 3))\n"
+            "    print(subtract(5, 3))\n\n\n"
             "if __name__ == '__main__':\n"
             "    main()\n"
         )
@@ -742,7 +831,8 @@ def test_update_file(project_id):
 
     try:
         response = requests.put(
-            f"{BASE_URL}/projects/{project_id}/files/content",
+            f"{BASE_URL}/projects/"
+            f"{project_id}/files/content",
             params=params,
             json=payload,
             timeout=10,
@@ -753,7 +843,8 @@ def test_update_file(project_id):
         success = (
             response.status_code == 200
             and data.get("success") is True
-            and data.get("path") == "src/main.py"
+            and data.get("path")
+            == "src/main.py"
         )
 
         print_result(name, success, response)
@@ -768,7 +859,9 @@ def test_update_file(project_id):
 
 
 def test_verify_updated_file(project_id):
-    name = "Verify Updated File Content"
+    name = (
+        "Verify Updated File Content"
+    )
 
     params = {
         "path": "src/main.py"
@@ -776,7 +869,8 @@ def test_verify_updated_file(project_id):
 
     try:
         response = requests.get(
-            f"{BASE_URL}/projects/{project_id}/files/content",
+            f"{BASE_URL}/projects/"
+            f"{project_id}/files/content",
             params=params,
             timeout=10,
         )
@@ -785,7 +879,7 @@ def test_verify_updated_file(project_id):
 
         success = (
             response.status_code == 200
-            and "File updated successfully"
+            and "def subtract(a, b)"
             in data.get("content", "")
         )
 
@@ -801,7 +895,9 @@ def test_verify_updated_file(project_id):
 
 
 def test_duplicate_file(project_id):
-    name = "POST File - Duplicate File Test"
+    name = (
+        "POST File - Duplicate File Test"
+    )
 
     payload = {
         "path": "src/main.py",
@@ -811,7 +907,8 @@ def test_duplicate_file(project_id):
 
     try:
         response = requests.post(
-            f"{BASE_URL}/projects/{project_id}/files",
+            f"{BASE_URL}/projects/"
+            f"{project_id}/files",
             json=payload,
             timeout=10,
         )
@@ -832,17 +929,24 @@ def test_duplicate_file(project_id):
 
 
 def test_path_traversal(project_id):
-    name = "File Path Traversal Security Test"
+    name = (
+        "File Path Traversal Security Test"
+    )
 
     payload = {
-        "path": "../../outside_workspace.txt",
-        "content": "This should never be created.",
+        "path": (
+            "../../outside_workspace.txt"
+        ),
+        "content": (
+            "This should never be created."
+        ),
         "overwrite": False,
     }
 
     try:
         response = requests.post(
-            f"{BASE_URL}/projects/{project_id}/files",
+            f"{BASE_URL}/projects/"
+            f"{project_id}/files",
             json=payload,
             timeout=10,
         )
@@ -862,9 +966,186 @@ def test_path_traversal(project_id):
         return False
 
 
+# ============================================================
+# Phase 3 - Coding Agent Tests
+# ============================================================
+
+def test_coding_agent(project_id):
+    """
+    Test the Coding Agent with the existing
+    project context.
+    """
+
+    name = (
+        f"POST /projects/{project_id}/agent"
+    )
+
+    payload = {
+        "task": (
+            "Analyze the current project structure "
+            "and explain what the existing Python "
+            "code does. Suggest two improvements."
+        ),
+        "temperature": 0.2,
+        "max_tokens": 512,
+    }
+
+    try:
+        print(
+            "\nRunning Coding Agent..."
+        )
+
+        response = requests.post(
+            f"{BASE_URL}/projects/"
+            f"{project_id}/agent",
+            json=payload,
+            timeout=300,
+        )
+
+        try:
+            data = response.json()
+        except ValueError:
+            data = {}
+
+        success = (
+            response.status_code == 200
+        )
+
+        # Accept common response structures while
+        # still ensuring the agent returned content.
+        if success:
+
+            response_text = (
+                data.get("response")
+                or data.get("result")
+                or data.get("message")
+                or data.get("content")
+            )
+
+            success = (
+                isinstance(
+                    response_text,
+                    str,
+                )
+                and len(
+                    response_text.strip()
+                ) > 0
+            )
+
+        print_result(
+            name,
+            success,
+            response,
+        )
+
+        return success
+
+    except requests.RequestException as error:
+        print(f"\n[FAIL] {name}")
+        print(error)
+
+        return False
+
+
+def test_coding_agent_project_not_found():
+    """
+    Verify the Coding Agent returns 404
+    for a project that does not exist.
+    """
+
+    name = (
+        "POST /projects/999999/agent "
+        "- Not Found Test"
+    )
+
+    payload = {
+        "task": (
+            "Analyze this project."
+        ),
+        "temperature": 0.2,
+        "max_tokens": 128,
+    }
+
+    try:
+        response = requests.post(
+            f"{BASE_URL}/projects/"
+            "999999/agent",
+            json=payload,
+            timeout=30,
+        )
+
+        success = (
+            response.status_code == 404
+        )
+
+        print_result(
+            name,
+            success,
+            response,
+        )
+
+        return success
+
+    except requests.RequestException as error:
+        print(f"\n[FAIL] {name}")
+        print(error)
+
+        return False
+
+
+def test_coding_agent_validation(project_id):
+    """
+    Verify request validation rejects
+    an empty task and invalid parameters.
+    """
+
+    name = (
+        "POST /projects/"
+        f"{project_id}/agent "
+        "- Validation Test"
+    )
+
+    payload = {
+        "task": "",
+        "temperature": 5,
+        "max_tokens": -10,
+    }
+
+    try:
+        response = requests.post(
+            f"{BASE_URL}/projects/"
+            f"{project_id}/agent",
+            json=payload,
+            timeout=30,
+        )
+
+        success = (
+            response.status_code == 422
+        )
+
+        print_result(
+            name,
+            success,
+            response,
+        )
+
+        return success
+
+    except requests.RequestException as error:
+        print(f"\n[FAIL] {name}")
+        print(error)
+
+        return False
+
+
+# ============================================================
+# Phase 2 - Remaining File Tests
+# ============================================================
+
 def test_delete_file(project_id):
     name = (
-        f"DELETE /projects/{project_id}/files"
+        f"DELETE /projects/{project_id}"
+        "/files"
     )
 
     params = {
@@ -873,7 +1154,8 @@ def test_delete_file(project_id):
 
     try:
         response = requests.delete(
-            f"{BASE_URL}/projects/{project_id}/files",
+            f"{BASE_URL}/projects/"
+            f"{project_id}/files",
             params=params,
             timeout=10,
         )
@@ -883,10 +1165,15 @@ def test_delete_file(project_id):
         success = (
             response.status_code == 200
             and data.get("success") is True
-            and data.get("path") == "src/main.py"
+            and data.get("path")
+            == "src/main.py"
         )
 
-        print_result(name, success, response)
+        print_result(
+            name,
+            success,
+            response,
+        )
 
         return success
 
@@ -898,7 +1185,10 @@ def test_delete_file(project_id):
 
 
 def test_deleted_file_not_found(project_id):
-    name = "GET Deleted File - Not Found Test"
+    name = (
+        "GET Deleted File "
+        "- Not Found Test"
+    )
 
     params = {
         "path": "src/main.py"
@@ -906,7 +1196,8 @@ def test_deleted_file_not_found(project_id):
 
     try:
         response = requests.get(
-            f"{BASE_URL}/projects/{project_id}/files/content",
+            f"{BASE_URL}/projects/"
+            f"{project_id}/files/content",
             params=params,
             timeout=10,
         )
@@ -915,7 +1206,11 @@ def test_deleted_file_not_found(project_id):
             response.status_code == 404
         )
 
-        print_result(name, success, response)
+        print_result(
+            name,
+            success,
+            response,
+        )
 
         return success
 
@@ -931,11 +1226,14 @@ def test_deleted_file_not_found(project_id):
 # ============================================================
 
 def test_delete_project(project_id):
-    name = f"DELETE /projects/{project_id}"
+    name = (
+        f"DELETE /projects/{project_id}"
+    )
 
     try:
         response = requests.delete(
-            f"{BASE_URL}/projects/{project_id}",
+            f"{BASE_URL}/projects/"
+            f"{project_id}",
             timeout=20,
         )
 
@@ -946,7 +1244,11 @@ def test_delete_project(project_id):
             and data.get("success") is True
         )
 
-        print_result(name, success, response)
+        print_result(
+            name,
+            success,
+            response,
+        )
 
         return success
 
@@ -958,19 +1260,25 @@ def test_delete_project(project_id):
 
 
 def test_workspace_deleted(workspace_path):
-    name = "Project Workspace Deleted"
+    name = (
+        "Project Workspace Deleted"
+    )
 
     try:
         path = Path(workspace_path)
 
-        success = not path.exists()
+        success = (
+            not path.exists()
+        )
 
         print_result(
             name,
             success,
             extra={
                 "workspace_path": str(path),
-                "workspace_exists": path.exists(),
+                "workspace_exists": (
+                    path.exists()
+                ),
             },
         )
 
@@ -991,7 +1299,8 @@ def test_deleted_project_not_found(project_id):
 
     try:
         response = requests.get(
-            f"{BASE_URL}/projects/{project_id}",
+            f"{BASE_URL}/projects/"
+            f"{project_id}",
             timeout=10,
         )
 
@@ -999,7 +1308,11 @@ def test_deleted_project_not_found(project_id):
             response.status_code == 404
         )
 
-        print_result(name, success, response)
+        print_result(
+            name,
+            success,
+            response,
+        )
 
         return success
 
@@ -1017,9 +1330,12 @@ def test_deleted_project_not_found(project_id):
 def run_tests():
 
     print("=" * 60)
+
     print(
-        "LOCAL CODEX - PHASE 1 + PHASE 2 API TESTS"
+        "LOCAL CODEX - "
+        "PHASE 1 + PHASE 2 + PHASE 3 API TESTS"
     )
+
     print("=" * 60)
 
     results = []
@@ -1028,13 +1344,17 @@ def run_tests():
     # Health
     # --------------------------------------------------------
 
-    results.append(test_health())
+    results.append(
+        test_health()
+    )
 
     # --------------------------------------------------------
     # LLM
     # --------------------------------------------------------
 
-    results.append(test_llm_info())
+    results.append(
+        test_llm_info()
+    )
 
     results.append(
         test_llm_status()
@@ -1054,7 +1374,9 @@ def run_tests():
     # Chat
     # --------------------------------------------------------
 
-    results.append(test_chat())
+    results.append(
+        test_chat()
+    )
 
     results.append(
         test_chat_stream()
@@ -1074,13 +1396,19 @@ def run_tests():
         workspace_path,
     ) = test_create_project()
 
-    results.append(project_created)
+    results.append(
+        project_created
+    )
 
     if (
         project_created
         and project_id is not None
         and workspace_path is not None
     ):
+
+        # ----------------------------------------------------
+        # Workspace
+        # ----------------------------------------------------
 
         results.append(
             test_workspace_exists(
@@ -1094,6 +1422,10 @@ def run_tests():
             )
         )
 
+        # ----------------------------------------------------
+        # Projects
+        # ----------------------------------------------------
+
         results.append(
             test_list_projects()
         )
@@ -1105,7 +1437,7 @@ def run_tests():
         )
 
         # ----------------------------------------------------
-        # File Management
+        # Files
         # ----------------------------------------------------
 
         results.append(
@@ -1149,6 +1481,33 @@ def run_tests():
                 project_id
             )
         )
+
+        # ----------------------------------------------------
+        # Phase 3 - Coding Agent
+        #
+        # Run BEFORE deleting the test file so
+        # the agent has real project code to analyze.
+        # ----------------------------------------------------
+
+        results.append(
+            test_coding_agent(
+                project_id
+            )
+        )
+
+        results.append(
+            test_coding_agent_validation(
+                project_id
+            )
+        )
+
+        results.append(
+            test_coding_agent_project_not_found()
+        )
+
+        # ----------------------------------------------------
+        # Delete File
+        # ----------------------------------------------------
 
         results.append(
             test_delete_file(
@@ -1207,8 +1566,9 @@ def run_tests():
     else:
 
         print(
-            "\nSkipping remaining project, workspace, "
-            "and file tests because project creation failed."
+            "\nSkipping remaining project, "
+            "workspace, file, and Coding Agent "
+            "tests because project creation failed."
         )
 
     # --------------------------------------------------------
@@ -1230,11 +1590,20 @@ def run_tests():
     # --------------------------------------------------------
 
     passed = sum(results)
+
     total = len(results)
 
-    print("\n" + "=" * 60)
-    print("TEST SUMMARY")
-    print("=" * 60)
+    print(
+        "\n" + "=" * 60
+    )
+
+    print(
+        "TEST SUMMARY"
+    )
+
+    print(
+        "=" * 60
+    )
 
     print(
         f"Passed: {passed}/{total}"
@@ -1243,8 +1612,8 @@ def run_tests():
     if passed == total:
 
         print(
-            "\nALL API, WORKSPACE, AND FILE "
-            "TESTS PASSED! 🎉"
+            "\nALL API, WORKSPACE, FILE, "
+            "AND CODING AGENT TESTS PASSED! 🎉"
         )
 
         return 0

@@ -16,29 +16,23 @@ logger = logging.getLogger(__name__)
 
 
 class LlamaClient:
-    """
-    Wrapper around llama-cpp-python for managing the
-    local GGUF model.
-    """
-
     def __init__(self):
         self.llm: Llama | None = None
 
-
-    # ==========================================================
+    # ============================================================
     # Model Management
-    # ==========================================================
+    # ============================================================
 
     def load_model(self) -> bool:
-        """
-        Load the GGUF model into memory.
-        """
+        """Load the GGUF model into memory."""
 
         if self.llm is not None:
             logger.info("Model is already loaded.")
             return False
 
-        model_path = Path(settings.MODEL_PATH).resolve()
+        model_path = Path(
+            settings.MODEL_PATH
+        ).resolve()
 
         if not model_path.exists():
             logger.error(
@@ -80,11 +74,8 @@ class LlamaClient:
                 f"Failed to load model: {str(error)}"
             ) from error
 
-
     def unload_model(self) -> bool:
-        """
-        Unload the model from memory.
-        """
+        """Unload the model from memory."""
 
         if self.llm is None:
             logger.info(
@@ -117,19 +108,13 @@ class LlamaClient:
                 f"Failed to unload model: {str(error)}"
             ) from error
 
-
     def is_loaded(self) -> bool:
-        """
-        Check whether the model is loaded.
-        """
+        """Check whether the model is loaded."""
 
         return self.llm is not None
 
-
     def get_info(self) -> dict:
-        """
-        Return model configuration information.
-        """
+        """Return model configuration information."""
 
         model_path = Path(
             settings.MODEL_PATH
@@ -139,29 +124,24 @@ class LlamaClient:
             "loaded": self.is_loaded(),
             "model_path": str(model_path),
             "model_exists": model_path.exists(),
-            "context_size": (
-                settings.MODEL_CONTEXT_SIZE
-            ),
-            "gpu_layers": (
-                settings.MODEL_GPU_LAYERS
-            ),
+            "context_size": settings.MODEL_CONTEXT_SIZE,
+            "gpu_layers": settings.MODEL_GPU_LAYERS,
         }
 
-
-    # ==========================================================
-    # Completion Generation
-    # ==========================================================
+    # ============================================================
+    # Text Generation
+    # ============================================================
 
     def generate(
         self,
         prompt: str,
         temperature: float = 0.2,
-        max_tokens: int = 2048,
+        max_tokens: int = 1024,
     ) -> str:
         """
-        Generate a text completion.
+        Generate a text completion from a raw prompt.
 
-        This method is primarily used by the Coding Agent.
+        This method is used by the Coding Agent.
         """
 
         try:
@@ -172,19 +152,14 @@ class LlamaClient:
                 "Generating text completion."
             )
 
-            response = self.llm.create_completion(
-                prompt=prompt,
+            response = self.llm(
+                prompt,
                 temperature=temperature,
                 max_tokens=max_tokens,
                 stop=[
-                    "</s>",
                     "<|im_end|>",
+                    "<|endoftext|>",
                 ],
-            )
-
-            logger.debug(
-                "Raw completion response: %s",
-                response,
             )
 
             choices = response.get(
@@ -193,47 +168,97 @@ class LlamaClient:
             )
 
             if not choices:
-                logger.warning(
+                raise LLMGenerationError(
                     "LLM returned no completion choices."
                 )
-
-                return ""
 
             text = choices[0].get(
                 "text",
                 "",
             )
 
-            if text is None:
-                return ""
+            return text.strip()
 
-            result = text.strip()
+        except ModelLoadError:
+            raise
 
-            logger.info(
-                "Completion generated successfully. "
-                "Length: %s characters.",
-                len(result),
+        except LLMGenerationError:
+            raise
+
+        except Exception as error:
+            logger.exception(
+                "Text generation failed."
             )
 
-            return result
+            raise LLMGenerationError(
+                f"LLM generation failed: {str(error)}"
+            ) from error
+
+    def generate_stream(
+        self,
+        prompt: str,
+        temperature: float = 0.2,
+        max_tokens: int = 1024,
+    ) -> Generator[str, None, None]:
+        """
+        Generate a streaming text completion from a raw prompt.
+        """
+
+        try:
+            if self.llm is None:
+                self.load_model()
+
+            logger.info(
+                "Starting streaming text generation."
+            )
+
+            stream = self.llm(
+                prompt,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                stop=[
+                    "<|im_end|>",
+                    "<|endoftext|>",
+                ],
+                stream=True,
+            )
+
+            for chunk in stream:
+                choices = chunk.get(
+                    "choices",
+                    [],
+                )
+
+                if not choices:
+                    continue
+
+                text = choices[0].get(
+                    "text",
+                    "",
+                )
+
+                if text:
+                    yield text
+
+            logger.info(
+                "Streaming text generation completed."
+            )
 
         except ModelLoadError:
             raise
 
         except Exception as error:
             logger.exception(
-                "LLM completion generation failed."
+                "Streaming text generation failed."
             )
 
             raise LLMGenerationError(
-                "LLM completion generation failed: "
-                f"{str(error)}"
+                f"LLM generation failed: {str(error)}"
             ) from error
 
-
-    # ==========================================================
+    # ============================================================
     # Chat Generation
-    # ==========================================================
+    # ============================================================
 
     def chat(
         self,
@@ -241,9 +266,7 @@ class LlamaClient:
         temperature: float = 0.7,
         max_tokens: int = 1024,
     ):
-        """
-        Generate a complete chat response.
-        """
+        """Generate a complete chat response."""
 
         try:
             if self.llm is None:
@@ -271,27 +294,20 @@ class LlamaClient:
                 f"LLM generation failed: {str(error)}"
             ) from error
 
-
-    # ==========================================================
-    # Streaming Chat Generation
-    # ==========================================================
-
     def chat_stream(
         self,
         messages: list[dict],
         temperature: float = 0.7,
         max_tokens: int = 1024,
     ) -> Generator:
-        """
-        Generate a streaming chat response.
-        """
+        """Generate a streaming chat response."""
 
         try:
             if self.llm is None:
                 self.load_model()
 
             logger.info(
-                "Starting streaming generation."
+                "Starting streaming chat generation."
             )
 
             stream = self.llm.create_chat_completion(
@@ -305,7 +321,7 @@ class LlamaClient:
                 yield chunk
 
             logger.info(
-                "Streaming generation completed."
+                "Streaming chat generation completed."
             )
 
         except ModelLoadError:
@@ -313,19 +329,20 @@ class LlamaClient:
 
         except Exception as error:
             logger.exception(
-                "Streaming generation failed."
+                "Streaming chat generation failed."
             )
 
             raise LLMGenerationError(
-                "Streaming generation failed: "
-                f"{str(error)}"
+                f"LLM generation failed: {str(error)}"
             ) from error
 
 
+# ============================================================
+# Shared Client Instance
+# ============================================================
+
 @lru_cache
 def get_llama_client() -> LlamaClient:
-    """
-    Return the shared LlamaClient instance.
-    """
+    """Return the shared LlamaClient instance."""
 
     return LlamaClient()
