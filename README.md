@@ -1,7 +1,4 @@
 
-```
-
-````markdown
 # Local Codex
 
 > A local AI-powered software development platform designed to progressively evolve from a local coding assistant into an autonomous software development environment.
@@ -109,7 +106,7 @@ Improvement
     │
     ▼
 Working Software
-````
+```
 
 The project will gradually move from a simple local LLM interface to a more advanced autonomous software development environment.
 
@@ -2708,7 +2705,4 @@ Next development milestone:
 PHASE 3 — CODING AGENT
 ```
 
-```
-
 This README reflects the **current state of the project based on the work completed so far**. The next implementation step is **Phase 3, Step 3.1: creating the `agents` architecture and the initial `coding_agent.py` foundation**.
-```
